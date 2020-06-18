@@ -2,7 +2,10 @@
 #BS4でデータフレームに入れてから銘柄ごとにまとめてCSVにしている。
 #これはCSVではなくて、スクレイピングしている。
 #これをもとに、 SQLiteにデータを放り込む
-#すでに取得した株価銘柄データをdataframeに読み込む
+
+#株価履歴格納用のテーブルを作成した。
+#修正後終値はadjustedcloseとした
+
 #CSV同様、SQLiteにdataframeを書き込みする
 #CSVは銘柄別ファイルとする
 #CSV読み込み時には、もし既存CSVファイルがあればこれを開いて、最終データを取得して
@@ -20,6 +23,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 import time
+import sqlite3
 
 def get_dfs(stock_number):
     dfs = []
@@ -62,19 +66,33 @@ def concatenate(dfs):
  #       data[c] = data[c].astype(float)
     return data
 
-#作成したコードリストを読み込む
-#code_list = pd.read_csv('code_list.csv')
-cl=[[1301,"極洋"]]
-code_list=pd.DataFrame(cl,columns=['code', 'name'])
+#作成した銘柄リストをSQLiteのbrandsテーブルから読み込む
+def get_price_dataframe(db_file_name):
+    conn = sqlite3.connect(db_file_name)
+    return pd.read_sql('SELECT code, name FROM brands ORDER BY code',conn)
+
+def AMain():
+    db='C:\\Users\\Nobuhiro Hoshino\\PycharmProjects\\stock_and_python_book\\chapter2\\StockPrices.db'
+    cl=get_price_dataframe(db)
+    code_list=pd.DataFrame(cl,columns=['code', 'name'])
 
 #複数のデータフレームをcsvで保存
 #ほっとくとINDEXが入るので、パラメータで指定する
 #ファイルが存在する場合は、上書きされる
 
-for i in range(len(code_list)):
-    k = code_list.loc[i,'code']
-    v = code_list.loc[i,'name']
-    print(k,v)
-    dfs = get_dfs(k)
-    data = concatenate(dfs)
-    data.to_csv('{}-{}.csv'.format(k,v),header=True,index=False)
+    for i in range(len(code_list)):
+        k = code_list.loc[i,'code']
+        v = code_list.loc[i,'name']
+        print(k,v)
+        dfs = get_dfs(k)
+        data = concatenate(dfs)
+
+        #dataframeのcolを変える必要あり
+        #dataframeをSQLiteに一気に書き出す方法を探す必要あり。
+        
+
+        data.to_csv('{}-{}.csv'.format(k,v),header=True,index=False)
+
+
+
+AMain()
