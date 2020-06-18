@@ -1,0 +1,35 @@
+#https://qiita.com/Fu-Om/items/62ee76fb29e3478539fe
+#全株価をCSVでダウンロードする。
+#年度・銘柄別のCSVファイルになるので、このまま実行すると膨大なデータファイル量になると思われる。
+#ダウンロードファイルを指定していないので、デフォルトのフォルダに全部落ちていく。
+
+
+
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+import time
+driver = webdriver.Chrome("C:\chromedriver_win32/chromedriver.exe")
+
+
+def download_stock_csv(code_range,year_range):
+    for code in code_range:
+        try:
+            for year in year_range:
+                url = 'https://kabuoji3.com/stock/{0}/{1}/'.format(code,year)
+                driver.get(url)
+
+                try:
+                    driver.find_element_by_name("csv").click()
+                    time.sleep(3)
+                    driver.find_element_by_name("csv").click()
+                except NoSuchElementException:
+                    print("no data")
+                    pass
+                time.sleep(1)
+
+        except NoSuchElementException:
+            print("no data")
+        pass
+    time.sleep(3)
+
+download_stock_csv(range(1301,9998),range(1983,2020))
