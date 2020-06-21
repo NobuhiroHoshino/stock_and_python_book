@@ -84,6 +84,7 @@ def AMain():
 #１日５００銘柄とする。４０５９銘柄委あるので、８日間で終わる
     listnumber=len(code_list)
     day1=range(0,500)
+    day12=range(174,500)
     day2=range(500,1000)
     day3=range(1000,1500)
     day4=range(1500,2000)
@@ -93,7 +94,7 @@ def AMain():
     day8=range(3500,listnumber)
 
     #ここで変数範囲を選択。あとは手動で変える
-    todaylist=day1
+    todaylist=day12
 
 #複数のデータフレームをcsvで保存
 #ほっとくとINDEXが入るので、パラメータで指定する
@@ -108,23 +109,27 @@ def AMain():
         v = code_list.loc[i,'name']
         print(k,v)
         dfs = get_dfs(k,range(1983,2021))
-        data = concatenate(dfs)
+        if dfs:
+            data = concatenate(dfs)
 
-        #dataframeのcolを変える。renameならdictで変更前、変更後を設定する。ピンポイントで変更が可能。
-        #data.columns=['date','open'・・・]でリストを入れれば、丸ごとの変更が可能。
-        renameindex = {'日付':'date','始値':'open','高値':'high' ,
-                       '安値':'low','終値':'close','出来高':'volume','終値調整':'ajustedclose'}
-        data=data.rename(columns= renameindex) #renameは本体を書き換えないので
+            #dataframeのcolを変える。renameならdictで変更前、変更後を設定する。ピンポイントで変更が可能。
+            #data.columns=['date','open'・・・]でリストを入れれば、丸ごとの変更が可能。
+            renameindex = {'日付':'date','始値':'open','高値':'high' ,
+                           '安値':'low','終値':'close','出来高':'volume','終値調整':'ajustedclose'}
+            data=data.rename(columns= renameindex) #renameは本体を書き換えないので
 
-        #code列がないんで追加が必要
-        #順番にこだわらなければ、代入すれば勝手にできる。便利。いろいろやり方はあるが、位置指定できるのは、insert
-        data.insert(1,'code',k)#insertは本体を書き換える。ついでにcodeで埋められる。便利。
+            #code列がないんで追加が必要
+            #順番にこだわらなければ、代入すれば勝手にできる。便利。いろいろやり方はあるが、位置指定できるのは、insert
+            data.insert(1,'code',k)#insertは本体を書き換える。ついでにcodeで埋められる。便利。
 
-        data.to_csv('{}\\{}-{}.csv'.format(CSVPATH, k, v), header=True, index=False)
+            data.to_csv('{}\\{}-{}.csv'.format(CSVPATH, k, v), header=True, index=False)
 
-        #dataframeをSQLiteに一気に書き出す
-        data.to_sql('prices',conn,if_exists='append',index=None)
-        #appendはテーブルがある場合は追加。replaceはそっくりテーブルを書き換えてしまう模様。
-        #また、dataframeはfloatらしいので、格納するとき型がどうなるか不安
+            #dataframeをSQLiteに一気に書き出す
+            data.to_sql('prices',conn,if_exists='append',index=None)
+            #appendはテーブルがある場合は追加。replaceはそっくりテーブルを書き換えてしまう模様。
+            #また、dataframeはfloatらしいので、格納するとき型がどうなるか不安
+
+            #処理が終わった番号を出力。これがわかればこの次から再開できる。
+            print('completed{}'.format(i))
 
 AMain()
