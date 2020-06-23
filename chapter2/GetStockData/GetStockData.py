@@ -85,7 +85,7 @@ def AMain():
     day1=range(0,500)
     day12=range(174,500)
     day2=range(500,1000)    #終了
-    day3=range(1000,1500)   #終了0623 およそ10時間かかる
+    day3=range(1000,1500)   #終了0623 およそ10時間かかる。
     day4=range(1500,2000)
     day5=range(2000,2500)
     day6=range(2500,3000)
