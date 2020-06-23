@@ -74,7 +74,7 @@ def get_price_dataframe(db_file_name):
     return pd.read_sql('SELECT code, name FROM brands ORDER BY code',conn)
 
 def AMain():
-    SQLFILE=r'C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\chapter2\StockPrices.db'
+    SQLFILE=r'C:\Users\Nobuhiro Hoshino\Documents\stock\StockPrices.db'
     CSVPATH=r'C:\Users\Nobuhiro Hoshino\Documents\stock\CSV'
 
     cl=get_price_dataframe(SQLFILE)
