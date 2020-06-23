@@ -16,8 +16,6 @@
 #銘柄別にDBが分かれていないのはちょっと気持ち悪いが
 #テーブル設計は別途のソフトで行う
 
-
-
 from bs4 import BeautifulSoup
 import pandas as pd
 # import pandas.io.sql 記述しなくてもいいらしい
@@ -25,6 +23,7 @@ import requests
 from datetime import datetime
 import time
 import sqlite3
+import ctypes
 
 def get_dfs(stock_number, year):
 #stocknumberはコード番号
@@ -85,8 +84,8 @@ def AMain():
     listnumber=len(code_list)
     day1=range(0,500)
     day12=range(174,500)
-    day2=range(500,1000)
-    day3=range(1000,1500)
+    day2=range(500,1000)    #終了
+    day3=range(1000,1500)   #終了0623 およそ10時間かかる
     day4=range(1500,2000)
     day5=range(2000,2500)
     day6=range(2500,3000)
@@ -94,7 +93,7 @@ def AMain():
     day8=range(3500,listnumber)
 
     #ここで変数範囲を選択。あとは手動で変える
-    todaylist=day12
+    todaylist=day4
 
 #複数のデータフレームをcsvで保存
 #ほっとくとINDEXが入るので、パラメータで指定する
@@ -130,6 +129,10 @@ def AMain():
             #また、dataframeはfloatらしいので、格納するとき型がどうなるか不安
 
             #処理が終わった番号を出力。これがわかればこの次から再開できる。
-            print('completed{}'.format(i))
+            print('completed-{}'.format(i))
+            print(datetime.now().isoformat())
+
+    # Windowsのスリープ
+    ctypes.windll.PowrProf.SetSuspendState(0, 1, 0)
 
 AMain()
