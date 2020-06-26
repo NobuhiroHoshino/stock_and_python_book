@@ -92,7 +92,8 @@ def AMain():
     day7=range(3000,3500)
     day8=range(3500,listnumber)
 
-    #ここで変数範囲を選択。あとは手動で変える
+    #ここで変数範囲を選択。あとは手動で変えるよ
+
     todaylist=day7
 
 #複数のデータフレームをcsvで保存
