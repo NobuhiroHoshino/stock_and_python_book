@@ -87,13 +87,13 @@ def AMain():
     day2=range(500,1000)    #終了
     day3=range(1000,1500)   #終了0623 およそ10時間かかる。
     day4=range(1500,2000)   #終了0624
-    day5=range(2000,2500)
-    day6=range(2500,3000)
+    day5=range(2000,2500)   #終了0625
+    day6=range(2500,3000)   #終了0626
     day7=range(3000,3500)
     day8=range(3500,listnumber)
 
     #ここで変数範囲を選択。あとは手動で変える
-    todaylist=day5
+    todaylist=day7
 
 #複数のデータフレームをcsvで保存
 #ほっとくとINDEXが入るので、パラメータで指定する
