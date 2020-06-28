@@ -74,14 +74,21 @@ def get_price_dataframe(db_file_name):
     return pd.read_sql('SELECT code, name FROM brands ORDER BY code',conn)
 
 def AMain():
-    SQLFILE=r'C:\Users\Nobuhiro Hoshino\Documents\stock\StockPrices.db'
-    CSVPATH=r'C:\Users\Nobuhiro Hoshino\Documents\stock\CSV'
+    Debug=True
+    if Debug=True:
+        SQLFILE=r'C:\Users\Nobuhiro Hoshino\Documents\stock\StockPrices.db'
+        CSVPATH=r'C:\Users\Nobuhiro Hoshino\Documents\stock\CSV\'
+    else:
+        SQLFILE=r'testStockPrices.db'
+        CSVPATH=r'test'
 
     cl=get_price_dataframe(SQLFILE)
     code_list=pd.DataFrame(cl,columns=['code', 'name'])
 
-#１日５００銘柄とする。４０５９銘柄委あるので、８日間で終わる
+    #１日５００銘柄とする。およそ１０時間。４０５９銘柄あるので、８日間で終わる
     listnumber=len(code_list)
+    dayAll=range(listnumber)
+    day0=range(0,1) #debug用データ作成
     day1=range(0,500)
     day12=range(174,500)
     day2=range(500,1000)    #終了
@@ -92,23 +99,20 @@ def AMain():
     day7=range(3000,3500)
     day8=range(3500,listnumber)
 
-    #ここで変数範囲を選択。あとは手動で変えるよ
-
+    #ここで変数範囲を選択。あとは手動で変える
     todaylist=day7
 
-#複数のデータフレームをcsvで保存
-#ほっとくとINDEXが入るので、パラメータで指定する
-#ファイルが存在する場合は、上書きされる
+    # ファイルが存在する場合は、上書きされる
     conn = sqlite3.connect(SQLFILE)
     cursor = conn.cursor()
-    if todaylist==day1:
-        cursor.execute('DELETE FROM prices') #初回前提なんで、テーブルのデータは全削除
+    if (todaylist == day) or debug:
+        cursor.execute('DELETE FROM prices')  # 初回前提なんで、テーブルのデータは全削除
 
     for i in todaylist:
         k = code_list.loc[i,'code']
         v = code_list.loc[i,'name']
         print(k,v)
-        dfs = get_dfs(k,range(1983,2021))
+        dfs = get_dfs(k,range(1983,2020))   #debug用に2019年末までにする。
         if dfs:
             data = concatenate(dfs)
 
@@ -122,7 +126,7 @@ def AMain():
             #順番にこだわらなければ、代入すれば勝手にできる。便利。いろいろやり方はあるが、位置指定できるのは、insert
             data.insert(1,'code',k)#insertは本体を書き換える。ついでにcodeで埋められる。便利。
 
-            data.to_csv('{}\\{}-{}.csv'.format(CSVPATH, k, v), header=True, index=False)
+            data.to_csv('{}{}-{}.csv'.format(CSVPATH, k, v), header=True, index=False)
 
             #dataframeをSQLiteに一気に書き出す
             data.to_sql('prices',conn,if_exists='append',index=None)

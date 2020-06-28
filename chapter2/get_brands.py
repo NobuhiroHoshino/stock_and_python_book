@@ -48,7 +48,8 @@ def insert_brands_to_db(db_file_name, code_range):
 
 #mainはなかったので付け足した。
 def main():
-  db = "C:\\Users\\Nobuhiro Hoshino\\PycharmProjects\\stock_and_python_book\\chapter2\\StockPrices.db"
+#  db = r"C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\chapter2\StockPrices.db"
+  db = r"testStockPrices.db"  #debug用の株価インデックス
   insert_brands_to_db(db, range(1301,9999))
 
 main()

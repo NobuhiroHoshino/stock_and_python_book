@@ -7,6 +7,7 @@ import requests
 from datetime import datetime
 import time
 import sqlite3
+import platform
 
 
 def get_df(stock_number):
@@ -43,8 +44,13 @@ def get_price_dataframe(db_file_name):
 
 
 def AMain():
-    SQLFILE = r'C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\StockPrices.db'
-    CSVPATH = r'C:\Users\Nobuhiro Hoshino\Documents\stock\CSV'
+    debug=True
+
+    if debug:
+        CSVPATH= 'test'
+    else:
+        SQLFILE = r'C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\StockPrices.db'
+        CSVPATH = r'C:\Users\Nobuhiro Hoshino\Documents\stock\CSV\'
 
     cl = get_price_dataframe(SQLFILE)
     code_list = pd.DataFrame(cl, columns=['code', 'name'])
@@ -55,6 +61,9 @@ def AMain():
 
     conn = sqlite3.connect(SQLFILE)
     # cursor = conn.cursor()
+
+    if debug:
+        todaylist=range(0,1)
 
     for i in todaylist:
         k = code_list.loc[i, 'code']
@@ -67,9 +76,11 @@ def AMain():
 
             # その前に、テスト環境を作る
             # ダミーのデータベースとダミーのCSVを用意する必要がある。
+            # 容量小さいので、git上に載せられるようにする。
+            # 検証方法もか（単にデータベース開けてみればわかるか）
             # CSVファイルを探す。code+nameであるはず
             # pandasで読み込み。
-            csvname='{}\\{}-{}.csv'.format(CSVPATH, k, v)
+            csvname='{}{}-{}.csv'.format(CSVPATH, k, v)
             csvdata=pd.read_csv(csvname)
             lastdate=csvdata.iloc[-1]['date']
             csvdata.query('date == ' + lastdate)
