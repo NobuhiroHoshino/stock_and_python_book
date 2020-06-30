@@ -96,11 +96,11 @@ def AMain():
     day4=range(1500,2000)   #終了0624
     day5=range(2000,2500)   #終了0625
     day6=range(2500,3000)   #終了0626
-    day7=range(3000,3500)
+    day7=range(3000,3500)   #終了0627
     day8=range(3500,listnumber)
 
     #ここで変数範囲を選択。あとは手動で変える
-    todaylist=day7
+    todaylist=day8
 
     # ファイルが存在する場合は、上書きされる
     conn = sqlite3.connect(SQLFILE)

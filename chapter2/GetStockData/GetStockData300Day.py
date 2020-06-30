@@ -46,61 +46,51 @@ def get_price_dataframe(db_file_name):
 def AMain():
     debug=True
 
+    SQLFILE = r'C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\StockPrices.db'
+    CSVPATH = 'C:\\Users\\Nobuhiro Hoshino\\Documents\\stock\\CSV\\'
+
     if debug:
+        SQLFILE = r'..\testStockPrices.db'
         CSVPATH= 'test'
-    else:
-        SQLFILE = r'C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\StockPrices.db'
-        CSVPATH = r'C:\Users\Nobuhiro Hoshino\Documents\stock\CSV\'
 
     cl = get_price_dataframe(SQLFILE)
     code_list = pd.DataFrame(cl, columns=['code', 'name'])
 
     todaylist = range(len(code_list))
+    if debug:
+        todaylist=range(0,1)
+
     renameindex = {'日付': 'date', '始値': 'open', '高値': 'high',
                    '安値': 'low', '終値': 'close', '出来高': 'volume', '終値調整': 'ajustedclose'}
 
     conn = sqlite3.connect(SQLFILE)
     # cursor = conn.cursor()
 
-    if debug:
-        todaylist=range(0,1)
-
     for i in todaylist:
         k = code_list.loc[i, 'code']
         v = code_list.loc[i, 'name']
         print(k, v)
         data = get_df(k)
-        if data:
+        #ここまでで、データは取れているのは確認した。ちなみに、データは新しい→古いの順番。３００日データは順番が逆
+        if not data.empty: #DFの空判定は、if DF:ではだめな模様
             data = data.rename(columns=renameindex)
-            data.insert(1, 'code', k)
 
-            # その前に、テスト環境を作る
-            # ダミーのデータベースとダミーのCSVを用意する必要がある。
-            # 容量小さいので、git上に載せられるようにする。
-            # 検証方法もか（単にデータベース開けてみればわかるか）
-            # CSVファイルを探す。code+nameであるはず
             # pandasで読み込み。
             csvname='{}{}-{}.csv'.format(CSVPATH, k, v)
             csvdata=pd.read_csv(csvname)
-            lastdate=csvdata.iloc[-1]['date']
-            csvdata.query('date == ' + lastdate)
-            
+            lastdate=csvdata.iloc[-1]['日付']      #最終データの日付を調べる
+            lastdate='date > "' + lastdate +'"'     #文字列は"でかこまないと。
+            adddata = data.query(lastdate,engine='python')
+            adddata = adddata.sort_values('date',ascending=True)    # このまま追記すると、データの順番が逆になるので
+            adddata.to_csv('{}{}-{}.csv'.format(CSVPATH, k, v), mode='a', header=None,index=None)    #追加モード
 
-            # ファイルを開く（appendで）
-
-            # 一番最後のデータを読む
-            # CSVに書かれた一番古いデータの日付を得る
-            # dataのその日付の次のデータを見つける。
-            # そこから追加で書き込む
-            # １行ずつか？pandasで一気に書き込みできるか？
-
-            # data.to_csv('{}\\{}-{}.csv'.format(CSVPATH, k, v), header=True, index=False)
 
             # priceテーブルから、銘柄Kの最新レコードを取り出す。
             # dataのその日付の次のデータを見つける（これはCSVと一致することでよいか？）
             # そこから先のデータの追加を行う。
             # データフレームの不要部分を削除してやれば、一気に追加できると思われる。
 
+            adddata.insert(1, 'code', k)
             data.to_sql('prices', conn, if_exists='append', index=None)
 
 
