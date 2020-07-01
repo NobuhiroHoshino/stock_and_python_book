@@ -75,12 +75,12 @@ def get_price_dataframe(db_file_name):
 
 def AMain():
     Debug=True
-    if Debug=True:
-        SQLFILE=r'C:\Users\Nobuhiro Hoshino\Documents\stock\StockPrices.db'
-        CSVPATH=r'C:\Users\Nobuhiro Hoshino\Documents\stock\CSV\'
-    else:
-        SQLFILE=r'testStockPrices.db'
+    if Debug:
+        SQLFILE=r'..\testStockPrices.db'
         CSVPATH=r'test'
+    else:
+        SQLFILE=r'C:\Users\Nobuhiro Hoshino\Documents\stock\StockPrices.db'
+        CSVPATH='C:\\Users\\Nobuhiro Hoshino\\Documents\\stock\\CSV\\'
 
     cl=get_price_dataframe(SQLFILE)
     code_list=pd.DataFrame(cl,columns=['code', 'name'])
@@ -88,7 +88,7 @@ def AMain():
     #１日５００銘柄とする。およそ１０時間。４０５９銘柄あるので、８日間で終わる
     listnumber=len(code_list)
     dayAll=range(listnumber)
-    day0=range(0,1) #debug用データ作成
+    day0=range(0,3) #debug用データ作成
     day1=range(0,500)
     day12=range(174,500)
     day2=range(500,1000)    #終了
@@ -100,12 +100,12 @@ def AMain():
     day8=range(3500,listnumber)
 
     #ここで変数範囲を選択。あとは手動で変える
-    todaylist=day8
+    todaylist=day0
 
     # ファイルが存在する場合は、上書きされる
     conn = sqlite3.connect(SQLFILE)
     cursor = conn.cursor()
-    if (todaylist == day) or debug:
+    if (todaylist == day1) or Debug:
         cursor.execute('DELETE FROM prices')  # 初回前提なんで、テーブルのデータは全削除
 
     for i in todaylist:
@@ -119,7 +119,7 @@ def AMain():
             #dataframeのcolを変える。renameならdictで変更前、変更後を設定する。ピンポイントで変更が可能。
             #data.columns=['date','open'・・・]でリストを入れれば、丸ごとの変更が可能。
             renameindex = {'日付':'date','始値':'open','高値':'high' ,
-                           '安値':'low','終値':'close','出来高':'volume','終値調整':'ajustedclose'}
+                           '安値':'low','終値':'close','出来高':'volume','終値調整':'adjustedclose'}
             data=data.rename(columns= renameindex) #renameは本体を書き換えないので
 
             #code列がないんで追加が必要
@@ -129,7 +129,7 @@ def AMain():
             data.to_csv('{}{}-{}.csv'.format(CSVPATH, k, v), header=True, index=False)
 
             #dataframeをSQLiteに一気に書き出す
-            data.to_sql('prices',conn,if_exists='append',index=None)
+            data.to_sql('prices',conn,if_exists='append', index=None)
             #appendはテーブルがある場合は追加。replaceはそっくりテーブルを書き換えてしまう模様。
             #また、dataframeはfloatらしいので、格納するとき型がどうなるか不安
 
@@ -138,6 +138,7 @@ def AMain():
             print(datetime.now().isoformat())
 
     # Windowsのスリープ
-    ctypes.windll.PowrProf.SetSuspendState(0, 1, 0)
+    if not Debug:
+        ctypes.windll.PowrProf.SetSuspendState(0, 1, 0)
 
 AMain()

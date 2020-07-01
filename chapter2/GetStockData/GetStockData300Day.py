@@ -61,7 +61,7 @@ def AMain():
         todaylist=range(0,1)
 
     renameindex = {'日付': 'date', '始値': 'open', '高値': 'high',
-                   '安値': 'low', '終値': 'close', '出来高': 'volume', '終値調整': 'ajustedclose'}
+                   '安値': 'low', '終値': 'close', '出来高': 'volume', '終値調整': 'adjustedclose'}
 
     conn = sqlite3.connect(SQLFILE)
     # cursor = conn.cursor()
@@ -70,28 +70,26 @@ def AMain():
         k = code_list.loc[i, 'code']
         v = code_list.loc[i, 'name']
         print(k, v)
-        data = get_df(k)
+        newdata = get_df(k)    #戻り値はデータフレーム。DFのリストではない。
         #ここまでで、データは取れているのは確認した。ちなみに、データは新しい→古いの順番。３００日データは順番が逆
-        if not data.empty: #DFの空判定は、if DF:ではだめな模様
-            data = data.rename(columns=renameindex)
+        if not newdata.empty: #DFの空判定は、if DF:ではだめな模様
+            newdata = newdata.rename(columns=renameindex) #CSV保存は日本語INDEXだが、どうせINDEXは追記しないので保存しないから問題ない。。
 
-            # pandasで読み込み。
-            csvname='{}{}-{}.csv'.format(CSVPATH, k, v)
-            csvdata=pd.read_csv(csvname)
-            lastdate=csvdata.iloc[-1]['日付']      #最終データの日付を調べる
-            lastdate='date > "' + lastdate +'"'     #文字列は"でかこまないと。
-            adddata = data.query(lastdate,engine='python')
-            adddata = adddata.sort_values('date',ascending=True)    # このまま追記すると、データの順番が逆になるので
+            # CSV追記
+            csvname = '{}{}-{}.csv'.format(CSVPATH, k, v)
+            csvdata = pd.read_csv(csvname)            #まあ全データ読む必要はないかもしれないが
+            lastdate = csvdata.iloc[-1]['日付']         #最終データの日付を調べる
+            lastdate = 'date > "' + lastdate +'"'      #文字列は"でかこまないと。query用の文字列
+            adddata = newdata.query(lastdate,engine='python')  #これでlastadate以降のデータが抽出される。便利。
+            adddata = adddata.sort_values('date', ascending = True)    # このまま追記すると、データの順番が逆になるのでソート
             adddata.to_csv('{}{}-{}.csv'.format(CSVPATH, k, v), mode='a', header=None,index=None)    #追加モード
 
-
-            # priceテーブルから、銘柄Kの最新レコードを取り出す。
-            # dataのその日付の次のデータを見つける（これはCSVと一致することでよいか？）
-            # そこから先のデータの追加を行う。
-            # データフレームの不要部分を削除してやれば、一気に追加できると思われる。
-
-            adddata.insert(1, 'code', k)
-            data.to_sql('prices', conn, if_exists='append', index=None)
-
+            # SQL追記
+            lastdate = pd.read_sql('SELECT MAX(date) FROM prices WHERE code="'+ k +'"', conn)    #当該コードの最新日を抽出
+            lastdate ='date > "' + lastdate +'"'      #文字列は"でかこまないと。query用の文字列
+            adddata = newdata.query(lastdate,engine='python')  #これでlastadate以降のデータが抽出される。便利。
+            adddata = adddata.sort_values('date', ascending = True)    # SQLなんでソートしなくてもいいけど
+            adddata.insert(1, 'code', k)    #SQLはcode入れないと駄目なんで。
+            adddata.to_sql('prices', conn, if_exists='append', header=None, index=None)
 
 AMain()
