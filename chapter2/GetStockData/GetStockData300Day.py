@@ -83,16 +83,16 @@ def AMain():
             adddata = newdata.query(lastdate,engine='python')  #これでlastadate以降のデータが抽出される。便利。
             if not adddata.empty:
                 adddata = adddata.sort_values('date', ascending = True)    # このまま追記すると、データの順番が逆になるのでソート
+                adddata.insert(1, 'code', k)    #CSV code入れないと駄目なんで。
                 adddata.to_csv('{}{}-{}.csv'.format(CSVPATH, k, v), mode='a', header=None,index=None)    #追加モード
 
             # SQL追記
             lastdate = pd.read_sql('SELECT MAX(date) FROM prices WHERE code="'+ k +'"', conn)    #当該コードの最新日を抽出
-            print(lastdate.iloc[0]) #lastdateはdf(1,1)
-            lastdate ='date > "' + lastdate.iloc[0] +'"'      #文字列は"でかこまないと。query用の文字列
-            adddata = newdata.query(lastdate,engine='python')  #これでlastadate以降のデータが抽出される。便利。
+            targetdate ='date > "' + lastdate.iloc[0,0] +'"'      #lastdateはpandas
+            adddata = newdata.query(targetdate,engine='python')
             if not adddata.empty:
                 adddata = adddata.sort_values('date', ascending = True)    # SQLなんでソートしなくてもいいけど
-                adddata.insert(1, 'code', k)    #SQLはcode入れないと駄目なんで。
-                adddata.to_sql('prices', conn, if_exists='append', header=None, index=None)
+                adddata.insert(1, 'code', k)    #code入れないと駄目なんで。
+                adddata.to_sql('prices', conn, if_exists='append',  index=None)
 
 AMain()
