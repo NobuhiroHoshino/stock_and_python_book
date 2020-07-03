@@ -44,12 +44,12 @@ def get_price_dataframe(db_file_name):
 
 
 def AMain():
-    debug=True
+    Debug=True
 
     SQLFILE = r'C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\StockPrices.db'
     CSVPATH = 'C:\\Users\\Nobuhiro Hoshino\\Documents\\stock\\CSV\\'
 
-    if debug:
+    if Debug:
         SQLFILE = r'..\testStockPrices.db'
         CSVPATH= 'test'
 
@@ -57,7 +57,7 @@ def AMain():
     code_list = pd.DataFrame(cl, columns=['code', 'name'])
 
     todaylist = range(len(code_list))
-    if debug:
+    if Debug:
         todaylist=range(0,1)
 
     renameindex = {'日付': 'date', '始値': 'open', '高値': 'high',
@@ -73,23 +73,26 @@ def AMain():
         newdata = get_df(k)    #戻り値はデータフレーム。DFのリストではない。
         #ここまでで、データは取れているのは確認した。ちなみに、データは新しい→古いの順番。３００日データは順番が逆
         if not newdata.empty: #DFの空判定は、if DF:ではだめな模様
-            newdata = newdata.rename(columns=renameindex) #CSV保存は日本語INDEXだが、どうせINDEXは追記しないので保存しないから問題ない。。
+            newdata = newdata.rename(columns=renameindex) #CSVもINDEXは日本語から英語に変えている。
 
             # CSV追記
             csvname = '{}{}-{}.csv'.format(CSVPATH, k, v)
             csvdata = pd.read_csv(csvname)            #まあ全データ読む必要はないかもしれないが
-            lastdate = csvdata.iloc[-1]['日付']         #最終データの日付を調べる
+            lastdate = csvdata.iloc[-1]['date']         #最終データの日付を調べる
             lastdate = 'date > "' + lastdate +'"'      #文字列は"でかこまないと。query用の文字列
             adddata = newdata.query(lastdate,engine='python')  #これでlastadate以降のデータが抽出される。便利。
-            adddata = adddata.sort_values('date', ascending = True)    # このまま追記すると、データの順番が逆になるのでソート
-            adddata.to_csv('{}{}-{}.csv'.format(CSVPATH, k, v), mode='a', header=None,index=None)    #追加モード
+            if not adddata.empty:
+                adddata = adddata.sort_values('date', ascending = True)    # このまま追記すると、データの順番が逆になるのでソート
+                adddata.to_csv('{}{}-{}.csv'.format(CSVPATH, k, v), mode='a', header=None,index=None)    #追加モード
 
             # SQL追記
             lastdate = pd.read_sql('SELECT MAX(date) FROM prices WHERE code="'+ k +'"', conn)    #当該コードの最新日を抽出
-            lastdate ='date > "' + lastdate +'"'      #文字列は"でかこまないと。query用の文字列
+            print(lastdate.iloc[0]) #lastdateはdf(1,1)
+            lastdate ='date > "' + lastdate.iloc[0] +'"'      #文字列は"でかこまないと。query用の文字列
             adddata = newdata.query(lastdate,engine='python')  #これでlastadate以降のデータが抽出される。便利。
-            adddata = adddata.sort_values('date', ascending = True)    # SQLなんでソートしなくてもいいけど
-            adddata.insert(1, 'code', k)    #SQLはcode入れないと駄目なんで。
-            adddata.to_sql('prices', conn, if_exists='append', header=None, index=None)
+            if not adddata.empty:
+                adddata = adddata.sort_values('date', ascending = True)    # SQLなんでソートしなくてもいいけど
+                adddata.insert(1, 'code', k)    #SQLはcode入れないと駄目なんで。
+                adddata.to_sql('prices', conn, if_exists='append', header=None, index=None)
 
 AMain()
