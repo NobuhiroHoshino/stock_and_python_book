@@ -1,5 +1,12 @@
 # とりあえず３００日分は問答無用でスクレイピングしてしまう。
 # あとは、DBとCSVを見ながら３００日データから追加していく
+#全銘柄で５時間くらいかかった
+# 1613 東証電気機器株価指数連動型上場投資信託 上場廃止
+# 8885 ラ・アトレ 株式併合
+# 8044 大都魚類　
+# 4217 日立化成　株式併合
+# 3606 レナウン　民事再生
+# 3258 ユニゾホールディングス　株式併合
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -8,7 +15,6 @@ from datetime import datetime
 import time
 import sqlite3
 import platform
-
 
 def get_df(stock_number):
     # stocknumberはコード番号
@@ -33,6 +39,7 @@ def get_df(stock_number):
     except IndexError:
         print('No data ', stock_number)
         time.sleep(1)
+        df = pd.DataFrame([])
 
     return df
 
@@ -44,14 +51,16 @@ def get_price_dataframe(db_file_name):
 
 
 def AMain():
-    Debug=True
+    Debug=False
 
-    SQLFILE = r'C:\Users\Nobuhiro Hoshino\PycharmProjects\stock_and_python_book\StockPrices.db'
+    SQLFILE = r'C:\Users\Nobuhiro Hoshino\Documents\stock\StockPrices.db'
     CSVPATH = 'C:\\Users\\Nobuhiro Hoshino\\Documents\\stock\\CSV\\'
 
     if Debug:
         SQLFILE = r'..\testStockPrices.db'
         CSVPATH= 'test'
+
+    print(datetime.now().isoformat())
 
     cl = get_price_dataframe(SQLFILE)
     code_list = pd.DataFrame(cl, columns=['code', 'name'])
@@ -64,12 +73,10 @@ def AMain():
                    '安値': 'low', '終値': 'close', '出来高': 'volume', '終値調整': 'adjustedclose'}
 
     conn = sqlite3.connect(SQLFILE)
-    # cursor = conn.cursor()
-
     for i in todaylist:
         k = code_list.loc[i, 'code']
         v = code_list.loc[i, 'name']
-        print(k, v)
+        print(i,k, v)
         newdata = get_df(k)    #戻り値はデータフレーム。DFのリストではない。
         #ここまでで、データは取れているのは確認した。ちなみに、データは新しい→古いの順番。３００日データは順番が逆
         if not newdata.empty: #DFの空判定は、if DF:ではだめな模様
@@ -94,5 +101,8 @@ def AMain():
                 adddata = adddata.sort_values('date', ascending = True)    # SQLなんでソートしなくてもいいけど
                 adddata.insert(1, 'code', k)    #code入れないと駄目なんで。
                 adddata.to_sql('prices', conn, if_exists='append',  index=None)
+
+    print(datetime.now().isoformat())
+
 
 AMain()
