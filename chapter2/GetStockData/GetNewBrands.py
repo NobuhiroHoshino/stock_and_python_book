@@ -1,33 +1,74 @@
 
-# -*- coding: utf-8 -*-
+# coding=utf-8
 
-#現状の問題点
-#Aタグが複数抽出されている。最初のAタグだけでいい場合、どう記述するのか
-#encodingがどうも正しくない気がする。UTF-8ではないのか？
-
+#encodingはrequestを使用することで回避した。
+#しかし、うまく会社名が抽出できない。
+#表が複雑な構成になっていて、かつろくなタグがついていないこと、
+#yieldを使って断続的に抽出していることもあり、
+#同一CSSセレクタで社名だけ抜く構文を思いつかず。
+#まあコード番号だけわかれば一応なんとかはなるので、今回は法人名取得は見送り。。
 
 from pyquery import PyQuery
 import datetime
 import sqlite3
+from urllib import request
+import pandas as pd
 
-def new_brands_generator():
+
+def GetNewBrands():
     url = 'http://www.jpx.co.jp/listing/stocks/new/index.html'
-    q = PyQuery(url)
-    for d, n, i in zip(q.find('tbody > tr:even > td:eq(0)'),
-                    q.find('tbody > tr > td > a'),
+    resp = request.urlopen(url)
+    html = resp.read().decode("utf-8")
+
+    q = PyQuery(html)
+    #q.find('tbody > tr > td > a:first'),　法人名抽出失敗のあと
+#    for d,  i in zip(q.find('tbody > tr:even > td:eq(0)'),
+#                    q.find('tbody > tr:even span')):
+#        date = datetime.datetime.strptime(d.text, '%Y/%m/%d').date()
+#        yield (i.get('id'), date)
+
+    head = ['code', 'date']
+
+    data = []
+    for d, i in zip(q.find('tbody > tr:even > td:eq(0)'),
                     q.find('tbody > tr:even span')):
         date = datetime.datetime.strptime(d.text, '%Y/%m/%d').date()
-        print( q.find('tbody > tr > td > a'))
-        yield (i.get('id'), n.text, date)
+        data.append([i, date])
+
+    df = pd.DataFrame(data, columns=head)
+    return df
 
 def insert_new_brands_to_db(db_file_name):
-  conn = sqlite3.connect(db_file_name)
-  with conn:
-    sql = 'INSERT INTO new_brands(code,date) VALUES(?,?)'
-    conn.executemany(sql, new_brands_generator())
+    head = ['code', 'date']
+    conn = sqlite3.connect(db_file_name)
+    #with conn:
+    #    sql = 'INSERT INTO new_brands(code,date) VALUES(?,?)'   #文字列連結で頑張るより、こちらのほうがスマートな処理かも。
+    #    conn.executemany(sql, new_brands_generator())   #当たり前だが、これだと重複しまくる。同じデータの判定が必要。ループ処理が必要
+
+    newdata = GetNewBrands()
+    for code, date in zip(newdata['code'],newdata['date']):
+        # dateは日付になっているようだし、codeはなんかテキストになっていないし。
+        samedata = pd.read_sql('SELECT code, date FROM new_brands WHERE code="' + code + '", date="' + date +'"', conn)  # 同一データ抽出
+        if samedata.empty:
+            adddata=pd.DataFrame([code,date], columns=head)
+            adddata.to_sql('new_brands', conn, if_exists='append', index=None)
+
+
+def pickUpNameTest():
+    #for id, name, date in new_brands_generator():
+    #    print(id, name, date)
+
+    url = 'http://www.jpx.co.jp/listing/stocks/new/index.html'
+    resp = request.urlopen(url)
+    html = resp.read().decode("utf-8")
+
+    q = PyQuery(html)
+#    n=q.find('tbody > tr > td > a'),
+    n=q.find('bg-even')
+    print(n.text)
 
 def AMain():
-    for id, name, date in new_brands_generator():
-        print(id, name, date)
+    db='testDB.db'
+    insert_new_brands_to_db(db)
 
 AMain()
