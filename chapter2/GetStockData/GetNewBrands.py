@@ -32,8 +32,8 @@ def GetNewBrands():
     data = []
     for d, i in zip(q.find('tbody > tr:even > td:eq(0)'),
                     q.find('tbody > tr:even span')):
-        date = datetime.datetime.strptime(d.text, '%Y/%m/%d').date()
-        data.append([i, date])
+        date = d.text.replace('/','-')  #日付は文字列として扱う。本体データの区切りに合わせる
+        data.append([i.get('id'), date])
 
     df = pd.DataFrame(data, columns=head)
     return df
@@ -47,12 +47,12 @@ def insert_new_brands_to_db(db_file_name):
 
     newdata = GetNewBrands()
     for code, date in zip(newdata['code'],newdata['date']):
-        # dateは日付になっているようだし、codeはなんかテキストになっていないし。
-        samedata = pd.read_sql('SELECT code, date FROM new_brands WHERE code="' + code + '", date="' + date +'"', conn)  # 同一データ抽出
+        sql='SELECT code, date FROM new_brands WHERE code="' + code + '" AND date="' + date +'"'
+        samedata = pd.read_sql(sql, conn)  # 同一データ抽出
         if samedata.empty:
-            adddata=pd.DataFrame([code,date], columns=head)
+            d=[[code, date]]
+            adddata=pd.DataFrame(d, columns=head) #dataframeにするのに、[[]]でないとダメだった。
             adddata.to_sql('new_brands', conn, if_exists='append', index=None)
-
 
 def pickUpNameTest():
     #for id, name, date in new_brands_generator():
